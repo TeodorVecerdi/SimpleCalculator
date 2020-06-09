@@ -5,19 +5,15 @@ namespace calc {
         public static void Main(string[] args) {
             var tokenizer = new Tokenizer("12 + 55 - 311 * 31 / 3");
             tokenizer.Parse();
-            if (tokenizer.IsValid()) {
-                Debug.Log("Tokens:");
-                foreach (var token in tokenizer.Tokens) {
-                    Debug.Log($"    {token}");
-                }
-
-                var tree = tokenizer.BuildAST();
-                tree.Traverse((token, depth) => {
-                    Debug.Log($"{string.Concat(Enumerable.Repeat("  ", depth))}{token}");
-                });
-            } else {
+            if (!tokenizer.IsValid()) {
                 Debug.Log($"Tokenizer input is invalid. {tokenizer.Input}");
+                return;
             }
+            
+            var tree = tokenizer.BuildAST();
+            tree.Traverse((token, depth) => { Debug.Log($"{string.Concat(Enumerable.Repeat("  ", depth))}{token}"); });
+            var value = tokenizer.EvaluateAST(tree);
+            Debug.LogInfo($"AST Evaluation Result: {value}");
         }
     }
 }

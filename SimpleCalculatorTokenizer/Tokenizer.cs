@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace calc {
     public class Tokenizer {
@@ -105,21 +106,32 @@ namespace calc {
 
         public BinaryTree<Token> BuildAST() {
             BinaryTree<Token> AST = new BinaryTree<Token>(tokens[0]);
-            for (int i = 1; i < tokens.Count; i++) {
+            for (var i = 1; i < tokens.Count; i++) {
                 var token = tokens[i];
-                if (token >= AST.Value) {
+                var right = GetDeepestEmptyRight(AST);
+                if (token >= right.Value) {
                     var newAST = new BinaryTree<Token>(token);
-                    AST.Parent = newAST;
-                    newAST.Left = AST;
-
-                    AST = newAST;
-                } else if (token < AST.Value) {
-                    var leaf = new BinaryTree<Token>(token) {Parent = AST};
-                    AST.Right = leaf;
+                    if (right.Parent != null) {
+                        right.Parent.Right = newAST;
+                    }
+                    newAST.Parent = right.Parent;
+                    right.Parent = newAST;
+                    newAST.Left = right;
+                    if(right == AST)
+                        AST = newAST;
+                } else {
+                    var leaf = new BinaryTree<Token>(token) {Parent = right};
+                    right.Right = leaf;
                 }
             }
 
             return AST;
+        }
+
+        private BinaryTree<Token> GetDeepestEmptyRight(BinaryTree<Token> ast) {
+            var curr = ast;
+            while (curr.Right != null) curr = curr.Right;
+            return curr;
         }
 
         public double EvaluateAST(BinaryTree<Token> ast) {
