@@ -11,14 +11,16 @@ namespace calc {
             switch (tokenType) {
                 case TokenType.Integer:
                     return 0;
-                case TokenType.Plus:
-                case TokenType.Minus:
+                case TokenType.Subtract:
                     return 1;
-                case TokenType.Multiply:
-                case TokenType.Divide:
+                case TokenType.Add:
                     return 2;
-                case TokenType.Power:
+                case TokenType.Divide:
                     return 3;
+                case TokenType.Multiply:
+                    return 4;
+                case TokenType.Power:
+                    return 5;
                 default:
                     return -1;
             }

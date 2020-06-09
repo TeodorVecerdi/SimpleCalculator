@@ -1,8 +1,8 @@
 namespace calc {
     public enum TokenType {
         Integer,
-        Plus,
-        Minus,
+        Add,
+        Subtract,
         Multiply,
         Divide,
         Power,

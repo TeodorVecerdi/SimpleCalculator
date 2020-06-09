@@ -28,8 +28,12 @@ namespace calc {
             Token currToken;
             do {
                 currToken = GetNextToken();
-                if (currToken.TokenType == TokenType.EOF || currToken.TokenType == TokenType.Invalid)
+                if (currToken.TokenType == TokenType.EOF)
                     break;
+                if (currToken.TokenType == TokenType.Invalid) {
+                    tokens = null;
+                    break;
+                }
                 tokens.Add(currToken);
             } while (true);
 
@@ -57,13 +61,13 @@ namespace calc {
             }
 
             if (input[iterator] == '+') {
-                var token = new Token(TokenType.Plus, "+");
+                var token = new Token(TokenType.Add, "+");
                 iterator++;
                 return token;
             }
 
             if (input[iterator] == '-') {
-                var token = new Token(TokenType.Minus, "-");
+                var token = new Token(TokenType.Subtract, "-");
                 iterator++;
                 return token;
             }
@@ -91,6 +95,7 @@ namespace calc {
         }
 
         public bool IsValid() {
+            if (tokens == null) return false;
             for (int i = 0; i < tokens.Count; i++) {
                 if (tokens[i].TokenType == TokenType.Integer) {
                     if (i > 0 && tokens[i - 1].TokenType == TokenType.Integer) return false;
@@ -105,11 +110,55 @@ namespace calc {
         }
 
         public BinaryTree<Token> BuildAST() {
-            BinaryTree<Token> AST = new BinaryTree<Token>(tokens[0]);
+            BinaryTree<Token> root = new BinaryTree<Token>(tokens[0]);
             for (var i = 1; i < tokens.Count; i++) {
                 var token = tokens[i];
-                var right = GetDeepestEmptyRight(AST);
-                if (token >= right.Value) {
+                if (token.TokenType.IsOperator()) {
+                    var currRoot = root;
+                    while (true) {
+                        // become root if the current root is not operator
+                        if (!currRoot.Value.TokenType.IsOperator()) {
+                            var node = new BinaryTree<Token>(token);
+                            node.Left = currRoot;
+                            if (currRoot.Parent != null) {
+                                node.Parent = currRoot.Parent;
+                                currRoot.Parent.Right = node;
+                            }
+                            else
+                                root = node;
+                            currRoot.Parent = node;
+                            break;
+                        }
+                        
+                        // if curr < root => curr is root, root is curr.Left
+                        if (token <= currRoot.Value) {
+                            var node = new BinaryTree<Token>(token) {Parent = currRoot.Parent};
+                            if (currRoot.Parent != null)
+                                currRoot.Parent.Right = node;
+                            else 
+                                root = node;
+                            currRoot.Parent = node;
+                            node.Left = currRoot;
+                            break;
+                        }
+
+                        if (token > currRoot.Value) {
+                            // Set as right if possible
+                            if (currRoot.Right == null) {
+                                var node = new BinaryTree<Token>(token) {Parent = currRoot};
+                                currRoot.Right = node;
+                                break;
+                            }
+
+                            currRoot = currRoot.Right;
+                        }
+                    }
+                } else {
+                    var right = GetDeepestEmptyRight(root);
+                    var leaf = new BinaryTree<Token>(token) {Parent = right};
+                    right.Right = leaf;
+                }
+                /*if (token >= right.Value) {
                     var newAST = new BinaryTree<Token>(token);
                     if (right.Parent != null) {
                         right.Parent.Right = newAST;
@@ -120,12 +169,11 @@ namespace calc {
                     if(right == AST)
                         AST = newAST;
                 } else {
-                    var leaf = new BinaryTree<Token>(token) {Parent = right};
-                    right.Right = leaf;
-                }
+                    
+                }*/
             }
 
-            return AST;
+            return root;
         }
 
         private BinaryTree<Token> GetDeepestEmptyRight(BinaryTree<Token> ast) {
@@ -136,9 +184,9 @@ namespace calc {
 
         public double EvaluateAST(BinaryTree<Token> ast) {
             switch (ast.Value.TokenType) {
-                case TokenType.Plus:
+                case TokenType.Add:
                     return EvaluateAST(ast.Left) + EvaluateAST(ast.Right);
-                case TokenType.Minus:
+                case TokenType.Subtract:
                     return EvaluateAST(ast.Left) - EvaluateAST(ast.Right);
                 case TokenType.Multiply:
                     return EvaluateAST(ast.Left) * EvaluateAST(ast.Right);
